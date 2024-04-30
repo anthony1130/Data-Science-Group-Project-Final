@@ -1,0 +1,132 @@
+---
+title: "Group Project Final"
+format: docx
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+library(readr)
+#library(tidymodels)
+data <- read_csv("kr-vs-kp.data")
+head(data)
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+colnames(data) <- c(
+ "bkblk",
+ "bknwy",
+ "bkon8",
+ "bkona",
+ "bkspr",
+ "bkxbq",
+ "bkxcr",
+ "bkxwp",
+ "blxwp",
+ "bxqsq",
+ "cntxt",
+ "dsopp",
+ "dwipd",
+ "hdchk",
+ "katri",
+ "mulch",
+ "qxmsq",
+ "r2ar8",
+ "reskd",
+ "reskr",
+ "rimmx",
+ "rkxwp",
+ "rxmsq",
+ "simpl",
+ "skach",
+ "skewr",
+ "skrxp",
+ "spcop",
+ "stlmt",
+ "thrsk",
+ "wkcti",
+ "wkna8",
+ "wknck",
+ "wkovl",
+ "wkpos",
+ "wtoeg",
+ "won")
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r}
+str(data)
+```
+
+```{r}
+summary(data)
+```
+
+```{r}
+set.seed(123) # for reproducibility
+train_index <- sample(nrow(data), 0.8 * nrow(data))
+train_data <- data[train_index, ]
+test_data <- data[-train_index, ]
+```
+
+```{r}
+# Load the caret package
+library(caret)
+
+# Impute missing values using K-nearest neighbors
+preproc <- preProcess(train_data, method = c("knnImpute", "zv"))
+
+# Apply the preprocessing to the training data
+train_data <- predict(preproc, newdata = train_data)
+
+# Convert "won" to a factor
+train_data$won <- factor(train_data$won, levels = c("nowin", "won"))
+
+# Specify the training control
+train_control <- trainControl(method = "cv", number = 5)
+
+# Fit logistic regression model
+model <- train(won ~ ., 
+               data = train_data, 
+               method = "glm", 
+               family = binomial, 
+               trControl = train_control)
+
+# Print the model
+print(model)
+# Print the summary
+#summary(model)
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+predicted.data <- data.frame(probability = fitted.values(model), won = train_data$won)
+predicted.data <- predicted.data[order(predicted.data$probability, decreasing=FALSE),]
+predicted.data$rank <- 1:nrow(predicted.data)
+
+library(ggplot2)
+library(cowplot)
+
+ggplot(data = predicted.data, aes(x=rank, y =probability)) + geom_point(aes(color=won), alpha=1, shape=4, stroke=2) + xlab("Index") + ylab("Predicted probaility of White Winning")
+
+
+```

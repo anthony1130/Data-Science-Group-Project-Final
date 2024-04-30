@@ -1,0 +1,72 @@
+---
+title: "Linear Discriminant Analysis"
+format: docx
+editor: visual
+---
+
+## Quarto
+
+Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+
+## Running Code
+
+When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+
+```{r}
+1 + 1
+```
+
+You can add options to executable code like this
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+```{r}
+# Load necessary libraries
+library(caret)
+library(MASS)
+
+# Choose the file containing your data
+file_path <- file.choose()
+
+# Read the data into R
+data <- read.csv(file_path, header = TRUE, stringsAsFactors = TRUE)  # Ensure strings are read as factors
+
+# Identify constant variables within groups
+constant_vars <- sapply(data[-ncol(data)], function(x) length(unique(x)) == 1)
+constant_vars <- names(constant_vars[constant_vars])
+
+# Remove constant variables from the dataset
+data <- data[, !names(data) %in% constant_vars]
+
+# Convert target variable to factor
+data$won <- as.factor(data$won)
+
+# Ensure all other variables are factors
+for (col in names(data)[-ncol(data)]) {
+  data[[col]] <- as.factor(data[[col]])
+}
+
+# Manually split the data into 80% training and 20% testing
+set.seed(123)
+train_indices <- sample(1:nrow(data), 0.8 * nrow(data))
+data_train <- data[train_indices, ]
+data_test <- data[-train_indices, ]
+
+# Fit Linear Discriminant Analysis (LDA) model on training data
+lda_model <- lda(won ~ ., data = data_train)
+
+# Make predictions on the testing set
+predictions_test <- predict(lda_model, newdata = data_test)
+
+# Evaluate the model on the testing set
+confusionMatrix(predictions_test$class, data_test$won)
+
+
+
+
+```
